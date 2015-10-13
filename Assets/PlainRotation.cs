@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
-public class Rotation : MonoBehaviour {
+public class PlainRotation : MonoBehaviour {
 	public int port = 55555;
 
 	private readonly List<Listener> listeners;
@@ -18,7 +18,7 @@ public class Rotation : MonoBehaviour {
 	private EndPoint remoteEP;
 	private AsyncCallback callback;
 
-	public Rotation() {
+	public PlainRotation() {
 		localEP = new IPEndPoint(IPAddress.Any, port);
 		localSocket = new Socket(localEP.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
 		qs = new Queue<Quaternion>();
@@ -41,16 +41,16 @@ public class Rotation : MonoBehaviour {
 		}
 		if (update) {
 			foreach (Listener listener in listeners) {
-				listener.on(q);
+				listener.On(q);
 			}
 		}
 	}
 
-	public void addListener(Listener listener) {
+	public void Add(Listener listener) {
 		listeners.Add(listener);
 	}
 
-	public void removeListener(Listener listener) {
+	public void Remove(Listener listener) {
 		listeners.Remove(listener);
 	}
 
@@ -75,7 +75,7 @@ public class Rotation : MonoBehaviour {
 			values[i] = BitConverter.ToSingle(value, 0);
 		}
 
-		Quaternion q = new Quaternion(values[0], values[1], values[2], values[3]);
+		Quaternion q = new Quaternion(-values[1], -values[2], values[0], values[3]);
 
 		lock (qs) {
 			qs.Enqueue(q);
@@ -88,6 +88,6 @@ public class Rotation : MonoBehaviour {
 	}
 
 	public interface Listener {
-		void on(Quaternion q);
+		void On(Quaternion q);
 	}
 }
