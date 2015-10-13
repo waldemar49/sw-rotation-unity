@@ -15,18 +15,11 @@ public class RotationReceiver : MonoBehaviour {
 	readonly Queue<Package> packages;
 
 	long newestPackageTimestamp;
-	int newestPackageN;
-	int[] newestPackageSigificants;
-	int[] newestPackageExponents;
-	string newestPackageInfo;
+	float[] newestPackageValues;
 
 	byte[] headerBuffer;
 	EndPoint headerRemoteEP;
 	AsyncCallback headerCallback;
-
-	byte[] bodyBuffer;
-	EndPoint bodyRemoteEP;
-	AsyncCallback bodyCallback;
 
 	public RotationReceiver() {
 		localEP = new IPEndPoint (IPAddress.Any, port);
@@ -42,7 +35,7 @@ public class RotationReceiver : MonoBehaviour {
 	void Update () {
 		Package package = null;
 		lock (packages) {
-			if (packages.Count > 0) {
+			while (packages.Count > 0) {
 				package = packages.Dequeue ();
 			}
 		}
@@ -51,25 +44,20 @@ public class RotationReceiver : MonoBehaviour {
 			s += package.Timestamp ();
 			s += "\n";
 			s += "\n";
-			int[] significants = package.Significants ();
-			int[] exponents = package.Exponents ();
-			for (int i = 0; i < significants.Length; ++i) {
+			float[] values = package.Values ();
+			for (int i = 0; i < values.Length; ++i) {
 				s += "[";
 				s += i;
 				s += "] ";
-				s += significants [i];
-				s += "E-";
-				s += exponents [i];
+				s += values[i];
 				s += "\n";
 			}
-			s += "\n";
-			s += package.Info ();
 			text.text = s;
 		}
 	}
 	
 	void BeginReceiveHeader() {
-		headerBuffer = new byte[8 + 4];
+		headerBuffer = new byte[8 + 4 * 4];
 		headerRemoteEP = new IPEndPoint(0, 0);
 		headerCallback = new AsyncCallback (EndReceiveHeader);
 
@@ -80,51 +68,20 @@ public class RotationReceiver : MonoBehaviour {
 		localSocket.EndReceiveFrom (result, ref headerRemoteEP);
 
 		byte[] timestamp = new byte[8];
-		byte[] n = new byte[4];
-		
-		Array.Copy (headerBuffer, 0, timestamp, 0, 8);
-		Array.Copy (headerBuffer, 8, n, 0, 4);
-
+		Array.Copy(headerBuffer, 0, timestamp, 0, 8);
 		if (BitConverter.IsLittleEndian) {
 			Array.Reverse (timestamp);
-			Array.Reverse (n);
 		}
-
 		newestPackageTimestamp = BitConverter.ToInt64 (timestamp, 0);
-		newestPackageN = BitConverter.ToInt32 (n, 0);
 
-		BeginReceiveBody ();
-	}
-
-	void BeginReceiveBody() {
-		bodyBuffer = new byte[(4 + 4) * newestPackageN];
-		bodyRemoteEP = new IPEndPoint(0, 0);
-		bodyCallback = new AsyncCallback (EndReceiveBody);
-
-		localSocket.BeginReceiveFrom (bodyBuffer, 0, bodyBuffer.Length, SocketFlags.None, ref bodyRemoteEP, bodyCallback, (object)this);
-	}
-
-	void EndReceiveBody(IAsyncResult result) {
-		localSocket.EndReceiveFrom (result, ref bodyRemoteEP);
-
-		newestPackageSigificants = new int[newestPackageN];
-		newestPackageExponents = new int[newestPackageN];
-		newestPackageInfo = "TODO";
-
-		for (int i = 0; i < newestPackageN; ++i) {
-			byte[] significant = new byte[4];
-			byte[] exponent = new byte[4];
-			
-			Array.Copy(bodyBuffer, i * (4 + 4), significant, 0, 4);
-			Array.Copy(bodyBuffer, i * (4 + 4) + 4, exponent, 0, 4);
-
+		newestPackageValues = new float[4];
+		for (int i = 0; i < 4; ++i) {
+			byte[] value = new byte[4];
+			Array.Copy(headerBuffer, 8 + i * 4, value, 0, 4);
 			if (BitConverter.IsLittleEndian) {
-				Array.Reverse (significant);
-				Array.Reverse (exponent);
+				Array.Reverse (value);
 			}
-			
-			newestPackageSigificants[i] = BitConverter.ToInt32 (significant, 0);
-			newestPackageExponents[i] = BitConverter.ToInt32 (exponent, 0);
+			newestPackageValues[i] = BitConverter.ToSingle (value, 0);
 		}
 
 		enqueuePackage ();
@@ -133,7 +90,7 @@ public class RotationReceiver : MonoBehaviour {
 	}
 
 	void enqueuePackage() {
-		Package package = new Package (newestPackageTimestamp, newestPackageSigificants, newestPackageExponents, newestPackageInfo);
+		Package package = new Package (newestPackageTimestamp, newestPackageValues);
 		lock (packages) {
 			packages.Enqueue (package);
 			if (packages.Count > 0) {
@@ -144,31 +101,19 @@ public class RotationReceiver : MonoBehaviour {
 
 	public class Package {
 		private readonly long timestamp;
-		private readonly int[] significants;
-		private readonly int[] exponents;
-		private readonly string info;
+		private readonly float[] values;
 
-		public Package(long timestamp, int[] significants, int[] exponents, string info) {
+		public Package(long timestamp, float[] values) {
 			this.timestamp = timestamp;
-			this.significants = significants;
-			this.exponents = exponents;
-			this.info = info;
+			this.values = values;
 		}
 
 		public long Timestamp() {
 			return timestamp;
 		}
 		
-		public int[] Significants() {
-			return significants;
-		}
-		
-		public int[] Exponents() {
-			return exponents;
-		}
-
-		public string Info() {
-			return info;
+		public float[] Values() {
+			return values;
 		}
 	}
 }
