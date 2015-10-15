@@ -9,7 +9,7 @@ public class RotationController : MonoBehaviour {
 		calibratedRotation = base.gameObject.GetComponent<CalibratedRotation>();
 	}
 
-	public static PlainRotation Rotation() {
+	public static PlainRotation PlainRotation() {
 		return Controller().rotation;
 	}
 

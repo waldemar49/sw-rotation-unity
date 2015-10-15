@@ -75,7 +75,13 @@ public class PlainRotation : MonoBehaviour {
 			values[i] = BitConverter.ToSingle(value, 0);
 		}
 
-		Quaternion q = new Quaternion(-values[1], -values[2], values[0], values[3]);
+		float f = (float) Math.Sqrt(2) / 2;
+		Quaternion q = new Quaternion(
+			f * (values[0] + values[3]),
+			-f * (values[1] - values[2]),
+			-f * (values[2] + values[1]),
+			f * (values[3] - values[0])
+		);
 
 		lock (qs) {
 			qs.Enqueue(q);

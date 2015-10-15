@@ -10,7 +10,7 @@ public class CalibratedRotation : MonoBehaviour, PlainRotation.Listener {
 	}
 
 	void Start() {
-		RotationController.Rotation().Add(this);
+		RotationController.PlainRotation().Add(this);
 
 		Reset();
 	}
@@ -31,8 +31,9 @@ public class CalibratedRotation : MonoBehaviour, PlainRotation.Listener {
 				Calibrate(q);
 			}
 		}
+		Quaternion r = zero * q;
 		foreach (PlainRotation.Listener listener in listeners) {
-			listener.On(q * zero);
+			listener.On(r);
 		}
 	}
 
