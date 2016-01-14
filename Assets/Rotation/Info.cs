@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-public class Info : MonoBehaviour, PlainRotation.Listener {
+public class Info : MonoBehaviour, Rotation.Listener {
 	private Text text;
 
 	void Start() {

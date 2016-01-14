@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class Arrow : MonoBehaviour, PlainRotation.Listener {
+public class CalibratedRotationApplier : MonoBehaviour, Rotation.Listener {
 	void Start () {
 		RotationController.CalibratedRotation().Add(this);
 	}

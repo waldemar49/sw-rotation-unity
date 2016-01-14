@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
-public class PlainRotation : MonoBehaviour {
+public class Rotation : MonoBehaviour {
 	public int port = 55555;
 
 	private readonly List<Listener> listeners;
@@ -18,7 +18,7 @@ public class PlainRotation : MonoBehaviour {
 	private EndPoint remoteEP;
 	private AsyncCallback callback;
 
-	public PlainRotation() {
+	public Rotation() {
 		localEP = new IPEndPoint(IPAddress.Any, port);
 		localSocket = new Socket(localEP.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
 		qs = new Queue<Quaternion>();

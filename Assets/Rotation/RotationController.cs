@@ -1,15 +1,15 @@
 ﻿using UnityEngine;
 
 public class RotationController : MonoBehaviour {
-	private PlainRotation rotation;
+	private Rotation rotation;
 	private CalibratedRotation calibratedRotation;
 
 	void Awake() {
-		rotation = base.gameObject.GetComponent<PlainRotation>();
-		calibratedRotation = base.gameObject.GetComponent<CalibratedRotation>();
+		rotation = GetComponent<Rotation>();
+		calibratedRotation = GetComponent<CalibratedRotation>();
 	}
 
-	public static PlainRotation PlainRotation() {
+	public static Rotation PlainRotation() {
 		return Controller().rotation;
 	}
 

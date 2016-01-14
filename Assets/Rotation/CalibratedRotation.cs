@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-public class CalibratedRotation : MonoBehaviour, PlainRotation.Listener {
-	private readonly List<PlainRotation.Listener> listeners;
+public class CalibratedRotation : MonoBehaviour, Rotation.Listener {
+	private readonly List<Rotation.Listener> listeners;
 	private Quaternion zero;
 
 	public CalibratedRotation() {
-		listeners = new List<PlainRotation.Listener>();
+		listeners = new List<Rotation.Listener>();
 	}
 
 	void Start() {
@@ -15,11 +15,11 @@ public class CalibratedRotation : MonoBehaviour, PlainRotation.Listener {
 		Reset();
 	}
 
-	public void Add(PlainRotation.Listener listener) {
+	public void Add(Rotation.Listener listener) {
 		listeners.Add(listener);
 	}
 
-	public void Remove(PlainRotation.Listener listener) {
+	public void Remove(Rotation.Listener listener) {
 		listeners.Remove(listener);
 	}
 
@@ -32,7 +32,7 @@ public class CalibratedRotation : MonoBehaviour, PlainRotation.Listener {
 			}
 		}
 		Quaternion r = zero * q;
-		foreach (PlainRotation.Listener listener in listeners) {
+		foreach (Rotation.Listener listener in listeners) {
 			listener.On(r);
 		}
 	}
