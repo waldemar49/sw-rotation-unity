@@ -2,46 +2,53 @@
 using UnityEngine;
 
 public class CalibratedRotation : MonoBehaviour, Rotation.Listener {
-	private readonly List<Rotation.Listener> listeners;
-	private Quaternion zero;
 
-	public CalibratedRotation() {
-		listeners = new List<Rotation.Listener>();
-	}
+    public GameObject offset;
 
-	void Start() {
-		RotationController.PlainRotation().Add(this);
+    private readonly List<Rotation.Listener> listeners;
+    private Quaternion zero;
 
-		Reset();
-	}
+    public CalibratedRotation() {
+        listeners = new List<Rotation.Listener>();
+    }
 
-	public void Add(Rotation.Listener listener) {
-		listeners.Add(listener);
-	}
+    void Start() {
+        RotationController.PlainRotation().Add(this);
 
-	public void Remove(Rotation.Listener listener) {
-		listeners.Remove(listener);
-	}
+        Reset();
+    }
 
-	public void On(Quaternion q) {
-		if (Input.GetKeyDown(KeyCode.Q)) {
-			if (Input.GetKey(KeyCode.LeftShift)) {
-				Reset();
-			} else if (Input.GetKey(KeyCode.LeftControl)) {
-				Calibrate(q);
-			}
-		}
-		Quaternion r = zero * q;
-		foreach (Rotation.Listener listener in listeners) {
-			listener.On(r);
-		}
-	}
+    public void Add(Rotation.Listener listener) {
+        listeners.Add(listener);
+    }
 
-	private void Reset() {
-		zero = Quaternion.identity;
-	}
+    public void Remove(Rotation.Listener listener) {
+        listeners.Remove(listener);
+    }
 
-	private void Calibrate(Quaternion q) {
-		zero = Quaternion.Inverse(q);
-	}
+    public void On(Quaternion q) {
+        if (Input.GetKeyDown(KeyCode.Q)) {
+            if (Input.GetKey(KeyCode.LeftShift)) {
+                Reset();
+            } else if (Input.GetKey(KeyCode.LeftControl)) {
+                Calibrate(q);
+            }
+        }
+        Quaternion r = zero * q;
+        foreach (Rotation.Listener listener in listeners) {
+            listener.On(r);
+        }
+    }
+
+    private void Reset() {
+        zero = Quaternion.identity;
+    }
+
+    private void Calibrate(Quaternion q) {
+        if (offset == null) {
+            zero = Quaternion.Inverse(q);
+        } else {
+            zero = Quaternion.Inverse(q * Quaternion.Inverse(offset.transform.rotation));
+        }
+    }
 }

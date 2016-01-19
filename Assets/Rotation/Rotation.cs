@@ -6,94 +6,95 @@ using System.Net.Sockets;
 using System.Threading;
 
 public class Rotation : MonoBehaviour {
-	public int port = 55555;
 
-	private readonly List<Listener> listeners;
+    public int port = 55555;
 
-	private readonly IPEndPoint localEP;
-	private readonly Socket localSocket;
-	private readonly Queue<Quaternion> qs;
+    private readonly List<Listener> listeners;
 
-	private byte[] buffer;
-	private EndPoint remoteEP;
-	private AsyncCallback callback;
+    private readonly IPEndPoint localEP;
+    private readonly Socket localSocket;
+    private readonly Queue<Quaternion> qs;
 
-	public Rotation() {
-		localEP = new IPEndPoint(IPAddress.Any, port);
-		localSocket = new Socket(localEP.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-		qs = new Queue<Quaternion>();
-		listeners = new List<Listener>();
-	}
+    private byte[] buffer;
+    private EndPoint remoteEP;
+    private AsyncCallback callback;
 
-	void Start() {
-		localSocket.Bind(localEP);
-		BeginReceive();
-	}
+    public Rotation() {
+        localEP = new IPEndPoint(IPAddress.Any, port);
+        localSocket = new Socket(localEP.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+        qs = new Queue<Quaternion>();
+        listeners = new List<Listener>();
+    }
 
-	void Update() {
-		Quaternion q = new Quaternion();
-		bool update = false;
-		lock (qs) {
-			while (qs.Count > 0) {
-				q = qs.Dequeue();
-				update = true;
-			}
-		}
-		if (update) {
-			foreach (Listener listener in listeners) {
-				listener.On(q);
-			}
-		}
-	}
+    void Start() {
+        localSocket.Bind(localEP);
+        BeginReceive();
+    }
 
-	public void Add(Listener listener) {
-		listeners.Add(listener);
-	}
+    void Update() {
+        Quaternion q = new Quaternion();
+        bool update = false;
+        lock (qs) {
+            while (qs.Count > 0) {
+                q = qs.Dequeue();
+                update = true;
+            }
+        }
+        if (update) {
+            foreach (Listener listener in listeners) {
+                listener.On(q);
+            }
+        }
+    }
 
-	public void Remove(Listener listener) {
-		listeners.Remove(listener);
-	}
+    public void Add(Listener listener) {
+        listeners.Add(listener);
+    }
 
-	private void BeginReceive() {
-		buffer = new byte[4 * 4];
-		remoteEP = new IPEndPoint(0, 0);
-		callback = new AsyncCallback(EndReceive);
+    public void Remove(Listener listener) {
+        listeners.Remove(listener);
+    }
 
-		localSocket.BeginReceiveFrom(buffer, 0, buffer.Length, SocketFlags.None, ref remoteEP, callback, (object)this);
-	}
+    private void BeginReceive() {
+        buffer = new byte[4 * 4];
+        remoteEP = new IPEndPoint(0, 0);
+        callback = new AsyncCallback(EndReceive);
 
-	private void EndReceive(IAsyncResult result) {
-		localSocket.EndReceiveFrom(result, ref remoteEP);
+        localSocket.BeginReceiveFrom(buffer, 0, buffer.Length, SocketFlags.None, ref remoteEP, callback, (object)this);
+    }
 
-		float[] values = new float[4];
-		for (int i = 0; i < 4; ++i) {
-			byte[] value = new byte[4];
-			Array.Copy(buffer, i * 4, value, 0, 4);
-			if (BitConverter.IsLittleEndian) {
-				Array.Reverse(value);
-			}
-			values[i] = BitConverter.ToSingle(value, 0);
-		}
+    private void EndReceive(IAsyncResult result) {
+        localSocket.EndReceiveFrom(result, ref remoteEP);
 
-		float f = (float) Math.Sqrt(2) / 2;
-		Quaternion q = new Quaternion(
-			f * (values[0] + values[3]),
-			-f * (values[1] - values[2]),
-			-f * (values[2] + values[1]),
-			f * (values[3] - values[0])
-		);
+        float[] values = new float[4];
+        for (int i = 0; i < 4; ++i) {
+            byte[] value = new byte[4];
+            Array.Copy(buffer, i * 4, value, 0, 4);
+            if (BitConverter.IsLittleEndian) {
+                Array.Reverse(value);
+            }
+            values[i] = BitConverter.ToSingle(value, 0);
+        }
 
-		lock (qs) {
-			qs.Enqueue(q);
-			if (qs.Count > 0) {
-				Monitor.PulseAll(qs);
-			}
-		}
+        float f = (float) Math.Sqrt(2) / 2;
+        Quaternion q = new Quaternion(
+            f * (values[0] + values[3]),
+            -f * (values[1] - values[2]),
+            -f * (values[2] + values[1]),
+            f * (values[3] - values[0])
+        );
 
-		BeginReceive();
-	}
+        lock (qs) {
+            qs.Enqueue(q);
+            if (qs.Count > 0) {
+                Monitor.PulseAll(qs);
+            }
+        }
 
-	public interface Listener {
-		void On(Quaternion q);
-	}
+        BeginReceive();
+    }
+
+    public interface Listener {
+        void On(Quaternion q);
+    }
 }
